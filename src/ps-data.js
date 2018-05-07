@@ -42,7 +42,31 @@ const fetchTrends = (id, catlist, scenlist) => {
         interval : 1
     });
 
-    return psfetch(trendUrl.toString());   
+    return psfetch(trendUrl.toString())
+    .then(trends => {
+        return { 
+            income : {
+                total_actual_amount : trends.income.total_actual_amount,
+                total_forecast_amount : trends.income.total_forecast_amount,
+                periods : trends.income.periods.map(item => ({
+                    start_date : item.start_date,
+                    actual_amount : item.actual_amount,
+                    forecast_amount : item.forecast_amount,
+                    refund_amount : item.refund_amount
+                })) 
+            },
+            expense :{
+                total_actual_amount : trends.expense.total_actual_amount,
+                total_forecast_amount : trends.expense.total_forecast_amount,
+                periods : trends.expense.periods.map(item => ({
+                    start_date : item.start_date,
+                    actual_amount : item.actual_amount,
+                    forecast_amount : item.forecast_amount,
+                    refund_amount : item.refund_amount
+                }) )
+            }
+        }
+    });   
 };
 
 const fetchBudgets = (id) => {
