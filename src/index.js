@@ -10,9 +10,6 @@ app.use('/data', (req, res) =>
 {
     let userid = fetchData.fetchID();
 
-    // userid
-    // .then(id => fetchData.fetchBudgets(id))
-    // .then(output => res.send(output));
     let categories = userid
     .then(id => {
         console.log('ID', id);
