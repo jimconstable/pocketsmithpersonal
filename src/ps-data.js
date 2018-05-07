@@ -1,5 +1,7 @@
 const fetch = require('node-fetch');
 const { URL, URLSearchParams } = require('url');
+const fs = require("fs-extra");
+const path  = require('path');
 
 const psfetch = url => 
     fetch(url, {
@@ -8,7 +10,6 @@ const psfetch = url =>
         }
     })
     .then(response => response.json());
-    
 
 const fetchID = () => 
     psfetch('https://api.pocketsmith.com/v2/me')
@@ -60,12 +61,16 @@ const fetchBudgets = (id) => {
     return psfetch(psUrl.toString() );   
 };
 
-const fetchScenarios = (id) => 
-    psfetch('https://api.pocketsmith.com/v2/users/' + id +'/accounts' )
-    .then(accounts => 
-         accounts.reduce(scenConCat,'')
-    );
-
+const fetchScenarios = (id) => {
+    let allAccounts = psfetch('https://api.pocketsmith.com/v2/users/' + id +'/accounts' )
+    let transAccounts = fs.readJson(path.join(__dirname, '..', 'accounts.json'));
+    
+    return Promise.all([allAccounts, transAccounts])
+    .then(([allacc, transacc])=>
+        allacc.filter(item => transacc.includes(item.title))
+    )
+    .then(accounts => accounts.reduce(scenConCat,''));
+}
 const scenConCat = (acc, val) => {
     return acc 
         + (acc === '' ? '' : ',' ) 
