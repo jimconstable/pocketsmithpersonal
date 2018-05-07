@@ -17,7 +17,8 @@ const fetchID = () =>
 
 const fetchCategories = (id) => 
     psfetch('https://api.pocketsmith.com/v2/users/' + id +'/categories'  )
-    .then(cats => cats.reduce(catConCat,''));
+    .then(cats => cats.filter(item => item.title != 'Transfers'))
+    .then(filteredcats => filteredcats.reduce(catConCat,''));
 
 const catConCat = (acc, val) => {
     let childs = val.children.reduce(catConCat, '');
