@@ -3,15 +3,11 @@ var margin = {top: 20, right: 30, bottom: 30, left: 40},
 width = 960 - margin.left - margin.right,
 height = 500 - margin.top - margin.bottom;
 
-var y = d3.scaleLinear()
-    .range([height, 0]);
-    
-var x = d3.scaleBand()
-.rangeRound([0, width]).padding(.1);
+var x = d3.scaleTime().range([0, width]);
+var y = d3.scaleLinear().range([height, 0]);    
 
-var xAxis = d3.axisBottom(x);
-    
-var yAxis = d3.axisLeft(y).ticks(10,"%");
+var xAxis = d3.axisBottom(x);    
+var yAxis = d3.axisLeft(y).ticks(10,"$");
 
 var chart = d3.select(".chart")
     .attr("width", width + margin.left + margin.right)
