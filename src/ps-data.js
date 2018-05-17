@@ -15,9 +15,7 @@ const apipath = 'https://api.pocketsmith.com/v2'
 
 const psfetch = url => 
     fetch(url, {
-        headers: {
-        'Authorization':'Key ' + process.env.PSKEY
-        }
+        headers: {'Authorization':'Key ' + process.env.PSKEY}
     })
     .then(response => response.json());
 
@@ -43,14 +41,15 @@ const fetchTrends = (id, catlist, scenlist) => {
         + id 
         + '/trend_analysis');
    
-    trendUrl.search = new URLSearchParams({
-        categories : catlist,
-        scenarios : scenlist,
-        start_date : '2018-01-01',
-        end_date : '2018-12-31',
-        period : 'months',
-        interval : 1
-    });
+    const newLocal = {
+        categories: catlist,
+        scenarios: scenlist,
+        start_date: '2018-01-01',
+        end_date: '2018-12-31',
+        period: 'months',
+        interval: 1
+    };
+    trendUrl.search = new URLSearchParams(newLocal);
     
     return psfetch(trendUrl.toString())
     .then(trends => { 
@@ -87,31 +86,42 @@ const scenConCat = (acc, val) => {
         + val.primary_scenario.id
 }
 
-const assembleData = () => {
+const totalsOnly = () =>{
     let userid = fetchID();
 
     let scenarios = userid
     .then(id => fetchScenarios(id));
 
     let categories = userid
-    .then(id => {
-        return fetchCategories(id);
+    .then(id => fetchCategories(id));
+    
+    return Promise.all([userid, categories, scenarios])
+    .then(([id, catlist, scenlist]) =>{
+        let cats = catlist.reduce((acc,val)=>
+            acc + (acc === '' ? '' : ',') + val.id,'')    
+        return fetchTrends(id, cats, scenlist)
     });
+}
+
+const allCategories = () => {
+    let userid = fetchID();
+
+    let scenarios = userid
+    .then(id => fetchScenarios(id));
+
+    let categories = userid
+    .then(id => fetchCategories(id));
     
     return Promise.all([userid, categories, scenarios])
     .then(([id, catlist, scenlist]) =>
-        Promise.all(
-            catlist.map(val => {
-                return fetchTrends(id, val.id, scenlist)
-                .then(result => {
-                    val.trends = result
-                    return val
-                })
+        Promise.all(catlist.map(val => 
+            fetchTrends(id, val.id, scenlist)
+            .then(result => {
+                val.trends = result
+                return val
             })
-        )
+        ))
     );
 }
 
-module.exports = {
-    assembleData
-};
+module.exports = { allCategories, totalsOnly };

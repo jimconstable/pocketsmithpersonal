@@ -1,4 +1,3 @@
-
 const express = require('express');
 const fetchData = require('./ps-data');
 
@@ -14,7 +13,15 @@ app.get('/', function(req, res) {
 
 app.use('/data', (req, res) => 
 {
-    fetchData.assembleData()
+    fetchData.allCategories()
+    .then(output => {
+       res.send( output );
+    });    
+});
+
+app.use('/totals', (req, res) => 
+{
+    fetchData.totalsOnly()
     .then(output => {
        res.send( output );
     });    
