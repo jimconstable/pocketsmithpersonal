@@ -7,7 +7,7 @@ var x = d3.scaleTime().range([0, width]);
 var y = d3.scaleLinear().range([height, 0]);    
 
 var xAxis = d3.axisBottom(x);    
-var yAxis = d3.axisLeft(y).ticks(10,"$");
+var yAxis = d3.axisLeft(y).ticks(15,"$");
 
 var chart = d3.select(".chart")
     .attr("width", width + margin.left + margin.right)
@@ -15,11 +15,17 @@ var chart = d3.select(".chart")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.json("/totals/", type)
-.then(function(data) {
-  x.domain(data.map(function(d) { return d.name; }));
-  y.domain([0, d3.max(data, function(d) { return d.value; })]);
+let parseDate = d3.timeParse('%Y-%m-%d')
 
+d3.json("/totals/")
+.then(function(data) {
+  x.domain([d3.min(data, d => parseDate(d.start_date)),d3.max(data,d => parseDate(d.start_date))]);
+  y.domain([0, d3.max(data, function(d) { return -d.expense_actual; })]);
+
+let line = d3.line()
+  .x(d => x(parseDate(d.start_date)))
+  .y(d => y(-d.expense_actual))
+  
   chart.append("g")
   .attr("class", "x axis")
   .attr("transform", "translate(0," + height + ")")
@@ -41,15 +47,17 @@ chart.selectAll(".bar")
     .data(data)
     .enter().append("rect")
     .attr("class", "bar")
-    .attr("x", function(d) { return x(d.name); })
-    .attr("y", function(d) { return y(d.value); })
-    .attr("height", function(d) { return height - y(d.value); })
-    .attr("width", x.bandwidth());
+    .attr("x", function(d) { return x(parseDate(d.start_date)); })
+    .attr("y", function(d) { return y(-d.expense_actual); })
+    .attr("height", function(d) { return height - y(-d.expense_actual); })
+    .attr("width", width/data.length);
 
-  
+chart.append("path")
+    .datum(data)
+    .attr("fill", "none")
+    .attr("stroke", "green")
+    .attr("stroke-linejoin", "round")
+    .attr("stroke-linecap", "round")
+    .attr("stroke-width", 2)
+    .attr("d", line)
 });
-
-function type(d) {
-  d.value = +d.value; // coerce to number
-  return d;
-}
