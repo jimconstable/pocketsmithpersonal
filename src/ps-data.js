@@ -53,6 +53,41 @@ const fetchTrends = (id, catlist, scenlist) => {
     
     return psfetch(trendUrl.toString())
     .then(trends => { 
+        // let now = today()
+        
+        // let outputArr = []
+        // if(trends.income != null) {
+        //     trends.income.periods.forEach(a => {
+        //         outputArr.push({
+        //             type: "income_forecast",
+        //             value: a.forecast_amount,
+        //             start_date: a.start_date
+        //         })
+        //         if (a.start_date < now) {
+        //         outputArr.push({
+        //             type: "income_actual",
+        //             value: a.actual_amount + a.refund_amount,
+        //             start_date: a.start_date
+        //         })}
+        //     });
+        // }
+
+        // if(trends.expense != null) {
+        //     trends.expense.periods.forEach(a => {
+        //         outputArr.push({
+        //             type: "expense_forecast",
+        //             value: a.forecast_amount,
+        //             start_date: a.start_date
+        //         })
+        //         if (a.start_date < now) {
+        //         outputArr.push({
+        //             type: "expense_actual",
+        //             value: a.actual_amount + a.refund_amount,
+        //             start_date: a.start_date
+        //         })}
+        //     });
+        // }
+        
         let incomePeriods =  (trends.income == null) ? periodbase : trends.income.periods
         let expensePeriods = (trends.expense == null) ? periodbase : trends.expense.periods
         
@@ -143,6 +178,23 @@ const allCategories = () => {
             })
         ))
     );
+}
+
+const today = () => {
+    var todayDate = new Date();
+    var dd = todayDate.getDate();
+    var mm = todayDate.getMonth()+1; //January is 0!
+    var yyyy = todayDate.getFullYear();
+
+    if(dd<10) {
+        dd = '0'+dd
+    } 
+
+    if(mm<10) {
+        mm = '0'+mm
+    } 
+
+    return yyyy + '-' + mm + '-' + dd;
 }
 
 module.exports = { allCategories, totalsOnly };
