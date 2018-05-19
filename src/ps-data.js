@@ -62,8 +62,8 @@ const fetchTrends = (id, catlist, scenlist) => {
                 start_date : item.start_date,
                 income_actual : item.actual_amount + item.refund_amount,
                 income_forecast : item.forecast_amount,
-                expense_actual : monthExpense.actual_amount + monthExpense.refund_amount,
-                expense_forecast : monthExpense.forecast_amount
+                expense_actual : -(monthExpense.actual_amount + monthExpense.refund_amount),
+                expense_forecast : -(monthExpense.forecast_amount)
             }
         })
     });   
@@ -100,8 +100,29 @@ const totalsOnly = () =>{
         let cats = catlist.reduce((acc,val)=>
             acc + (acc === '' ? '' : ',') + val.id,'')    
         return fetchTrends(id, cats, scenlist)
-    });
+    })
+    .then(totals => totals.reduce(
+        (a,b,i) => {
+            a.push(sumTrend(a[i], b,b.start_date))
+            return a
+        }
+    , [{
+        start_date : '2017-12-01',
+        income_actual : 0,
+        income_forecast : 0,
+        expense_actual : 0,
+        expense_forecast: 0 
+        }]
+    ));
 }
+
+const sumTrend = (t1,t2, start_date) => ({
+    start_date : start_date,
+    income_actual : t1.income_actual + t2.income_actual,
+    income_forecast : t1.income_forecast + t2.income_forecast,
+    expense_actual : t1.expense_actual + (t2.expense_actual === 0 ? null : t2.expense_actual),
+    expense_forecast :t1.expense_forecast + t2.expense_forecast,
+})
 
 const allCategories = () => {
     let userid = fetchID();
