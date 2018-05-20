@@ -52,57 +52,56 @@ const fetchTrends = (id, catlist, scenlist) => {
     trendUrl.search = new URLSearchParams(newLocal);
     
     return psfetch(trendUrl.toString())
-    .then(trends => { 
-        // let now = today()
-        
-        // let outputArr = []
-        // if(trends.income != null) {
-        //     trends.income.periods.forEach(a => {
-        //         outputArr.push({
-        //             type: "income_forecast",
-        //             value: a.forecast_amount,
-        //             start_date: a.start_date
-        //         })
-        //         if (a.start_date < now) {
-        //         outputArr.push({
-        //             type: "income_actual",
-        //             value: a.actual_amount + a.refund_amount,
-        //             start_date: a.start_date
-        //         })}
-        //     });
-        // }
-
-        // if(trends.expense != null) {
-        //     trends.expense.periods.forEach(a => {
-        //         outputArr.push({
-        //             type: "expense_forecast",
-        //             value: a.forecast_amount,
-        //             start_date: a.start_date
-        //         })
-        //         if (a.start_date < now) {
-        //         outputArr.push({
-        //             type: "expense_actual",
-        //             value: a.actual_amount + a.refund_amount,
-        //             start_date: a.start_date
-        //         })}
-        //     });
-        // }
-        
-        let incomePeriods =  (trends.income == null) ? periodbase : trends.income.periods
-        let expensePeriods = (trends.expense == null) ? periodbase : trends.expense.periods
-        
-        return incomePeriods.map( (item,i) => {
-            let monthExpense = expensePeriods[i];
-            return {
-                start_date : item.start_date,
-                income_actual : item.actual_amount + item.refund_amount,
-                income_forecast : item.forecast_amount,
-                expense_actual : -(monthExpense.actual_amount + monthExpense.refund_amount),
-                expense_forecast : -(monthExpense.forecast_amount)
-            }
-        })
+    .then(trends => {               
+        let outputArr = []
+        if(trends.income != null) {
+            let incomes = cumulativeAmounts(trends.income.periods,a => a, "income")
+            outputArr.push(...incomes.a)
+            outputArr.push(...incomes.f)
+        }
+        if(trends.expense != null) {
+            let expenses = cumulativeAmounts(trends.expense.periods,(a) => -a, "expense")
+            outputArr.push(...expenses.a)
+            outputArr.push(...expenses.f)
+        }
+        return outputArr
     });   
 };
+
+const cumulativeAmounts = (arr, convert, prefix ) => {
+    return arr.reduce((d,item) => {
+        if (item.start_date < aDate(0) ) {
+            d.a.push({
+                start_date : item.start_date, 
+                type: d.a[d.a.length-1].type, 
+                value: d.a[d.a.length-1].value + convert(item.actual_amount + item.refund_amount)
+            })
+        }
+        d.f.push({
+            start_date : item.start_date, 
+            type: d.f[d.f.length-1].type, 
+            value: d.f[d.f.length-1].value + convert(item.forecast_amount)
+        })
+        if (item.start_date < aDate(-1) && item.end_date > aDate(-1)){
+            d.f.push({
+                start_date : item.start_date, 
+                type: d.f[d.f.length-1].type, 
+                value: null
+            })
+            d.f.push({
+                start_date : item.start_date, 
+                type: d.f[d.f.length-1].type, 
+                value: d.a[d.a.length-1].value
+            })
+        }
+       
+        console.log('bananas', item, d);
+        return d
+    },
+        {a: [{start_date: '2017-12-01', type: prefix + "_actual", value:0}],
+        f: [{start_date: '2017-12-01', type: prefix + "_forecast", value:0}]}
+    )
+}
 
 const fetchScenarios = (id) => {
     let allAccounts = psfetch(apipath + '/users/' + id +'/accounts' )
@@ -136,19 +135,19 @@ const totalsOnly = () =>{
             acc + (acc === '' ? '' : ',') + val.id,'')    
         return fetchTrends(id, cats, scenlist)
     })
-    .then(totals => totals.reduce(
-        (a,b,i) => {
-            a.push(sumTrend(a[i], b,b.start_date))
-            return a
-        }
-    , [{
-        start_date : '2017-12-01',
-        income_actual : 0,
-        income_forecast : 0,
-        expense_actual : 0,
-        expense_forecast: 0 
-        }]
-    ));
+    // .then(totals => totals.reduce(
+    //     (a,b,i) => {
+    //         a.push(sumTrend(a[i], b,b.start_date))
+    //         return a
+    //     }
+    // , [{
+    //     start_date : '2017-12-01',
+    //     income_actual : 0,
+    //     income_forecast : 0,
+    //     expense_actual : 0,
+    //     expense_forecast: 0 
+    //     }]
+    // ));
 }
 
 const sumTrend = (t1,t2, start_date) => ({
@@ -180,10 +179,10 @@ const allCategories = () => {
     );
 }
 
-const today = () => {
+const aDate = (x) => {
     var todayDate = new Date();
     var dd = todayDate.getDate();
-    var mm = todayDate.getMonth()+1; //January is 0!
+    var mm = todayDate.getMonth() + 1 + x; //January is 0!
     var yyyy = todayDate.getFullYear();
 
     if(dd<10) {
