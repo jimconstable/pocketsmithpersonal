@@ -108,13 +108,12 @@ function update() {
      .attr("fill", d => z(d.type))
      .attr("r", 3)     
      .merge(circles)
+     .too
      .transition(t)
      .attr("cx", d => x(d.start_date))
      .attr("cy", d => y(d.value))
 
-
-  legendSpace = width/dataByType.length;
-
+  let legendSpace = width/dataByType.length;
 
     // Add the Legend
   chart.selectAll(".legend")
