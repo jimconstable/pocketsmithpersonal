@@ -74,32 +74,36 @@ const cumulativeAmounts = (arr, convert, prefix ) => {
             d.a.push({
                 start_date : item.start_date, 
                 type: d.a[d.a.length-1].type, 
-                value: d.a[d.a.length-1].value + convert(item.actual_amount + item.refund_amount)
+                value: d.a[d.a.length-1].value + convert(item.actual_amount + item.refund_amount),
+                delta: convert(item.actual_amount + item.refund_amount)
             })
         }
         d.f.push({
             start_date : item.start_date, 
             type: d.f[d.f.length-1].type, 
-            value: d.f[d.f.length-1].value + convert(item.forecast_amount)
+            value: d.f[d.f.length-1].value + convert(item.forecast_amount),
+            delta: convert(item.forecast_amount)
         })
         if (item.start_date < aDate(-1) && item.end_date > aDate(-1)){
             d.f.push({
                 start_date : item.start_date, 
                 type: d.f[d.f.length-1].type, 
-                value: null
+                value: null,
+                delta: null
             })
             d.f.push({
                 start_date : item.start_date, 
                 type: d.f[d.f.length-1].type, 
-                value: d.a[d.a.length-1].value
+                value: d.a[d.a.length-1].value,
+                delta: null
             })
         }
        
         console.log('bananas', item, d);
         return d
     },
-        {a: [{start_date: '2017-12-01', type: prefix + "_actual", value:0}],
-        f: [{start_date: '2017-12-01', type: prefix + "_forecast", value:0}]}
+        {a: [{start_date: '2017-12-01', type: prefix + "_actual", value:0, delta:0}],
+        f: [{start_date: '2017-12-01', type: prefix + "_forecast", value:0, delta:0}]}
     )
 }
 

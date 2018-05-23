@@ -17,3 +17,7 @@
   .x.axis path {
     display: none;
   }
+
+h1 {
+  color: blue;
+}
