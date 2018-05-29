@@ -3,14 +3,6 @@ const { URL, URLSearchParams } = require('url');
 const fs = require("fs-extra");
 const path  = require('path');
 
-const periodbase = ['01','02','03','04','05','06','07','08','09','10','11','12']
-.map( item => ({
-        start_date: '2018-' + item + '-01',
-        actual_amount : 0,
-        refund_amount : 0,
-        forecast_amount : 0
-    }))
-
 const apipath = 'https://api.pocketsmith.com/v2'
 
 const psfetch = url => 
@@ -51,61 +43,11 @@ const fetchTrends = (id, catlist, scenlist) => {
     };
     trendUrl.search = new URLSearchParams(newLocal);
     
-    return psfetch(trendUrl.toString())
-    .then(trends => {               
-        let outputArr = []
-        if(trends.income != null) {
-            let incomes = cumulativeAmounts(trends.income.periods,a => a, "income")
-            outputArr.push(...incomes.a)
-            outputArr.push(...incomes.f)
-        }
-        if(trends.expense != null) {
-            let expenses = cumulativeAmounts(trends.expense.periods,(a) => -a, "expense")
-            outputArr.push(...expenses.a)
-            outputArr.push(...expenses.f)
-        }
-        return outputArr
-    });   
+    return psfetch(trendUrl.toString());
+    
 };
 
-const cumulativeAmounts = (arr, convert, prefix ) => {
-    return arr.reduce((d,item) => {
-        if (item.start_date < aDate(0) ) {
-            d.a.push({
-                start_date : item.start_date, 
-                type: d.a[d.a.length-1].type, 
-                value: d.a[d.a.length-1].value + convert(item.actual_amount + item.refund_amount),
-                delta: convert(item.actual_amount + item.refund_amount)
-            })
-        }
-        d.f.push({
-            start_date : item.start_date, 
-            type: d.f[d.f.length-1].type, 
-            value: d.f[d.f.length-1].value + convert(item.forecast_amount),
-            delta: convert(item.forecast_amount)
-        })
-        if (item.start_date < aDate(-1) && item.end_date > aDate(-1)){
-            d.f.push({
-                start_date : item.start_date, 
-                type: d.f[d.f.length-1].type, 
-                value: null,
-                delta: null
-            })
-            d.f.push({
-                start_date : item.start_date, 
-                type: d.f[d.f.length-1].type, 
-                value: d.a[d.a.length-1].value,
-                delta: null
-            })
-        }
-       
-        console.log('bananas', item, d);
-        return d
-    },
-        {a: [{start_date: '2017-12-01', type: prefix + "_actual", value:0, delta:0}],
-        f: [{start_date: '2017-12-01', type: prefix + "_forecast", value:0, delta:0}]}
-    )
-}
+
 
 const fetchScenarios = (id) => {
     let allAccounts = psfetch(apipath + '/users/' + id +'/accounts' )
@@ -183,21 +125,5 @@ const allCategories = () => {
     );
 }
 
-const aDate = (x) => {
-    var todayDate = new Date();
-    var dd = todayDate.getDate();
-    var mm = todayDate.getMonth() + 1 + x; //January is 0!
-    var yyyy = todayDate.getFullYear();
-
-    if(dd<10) {
-        dd = '0'+dd
-    } 
-
-    if(mm<10) {
-        mm = '0'+mm
-    } 
-
-    return yyyy + '-' + mm + '-' + dd;
-}
 
 module.exports = { allCategories, totalsOnly };

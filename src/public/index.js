@@ -1,111 +1,4 @@
 
-function prepareChart(selector, inWidth, inHeight) {
-  var margin = {top: 20, right: 30, bottom: 60, left: 40},
-  width = inWidth - margin.left - margin.right,
-  height = inHeight - margin.top - margin.bottom;
-
-  var x = d3.scaleTime().range([0, width]);
-  var y = d3.scaleLinear().range([height, 0]);    
-
-  let z = d3.scaleOrdinal(d3.schemeDark2)
-    
-  var xAxis = d3.axisBottom(x);    
-  var yAxis = d3.axisLeft(y).ticks(15,"$");
-
-  var chart = d3.select(selector)
-    .append("svg")
-    // .attr("width", width + margin.left + margin.right)
-    // .attr("height", height + margin.top + margin.bottom)
-    .attr("preserveAspectRatio", "xMinYMin meet")
-    .attr("viewBox", "0 0 " + (width + margin.left + margin.right) + " " + (height + margin.top + margin.bottom))
-    .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-  y.domain([0, 300000]); 
-  
-  chart.append("g")
-    .attr("class", "yaxis")
-    .call(yAxis);
-
-  let months = d3.utcMonth.range(new Date(2017,12,01), new Date(2019,01,01))
-  x.domain(d3.extent(months));
-  
-  chart.append("g")
-    .attr("class", "xaxis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xAxis);
-
-  return function update(data) {
-      
-      var t = d3.transition()
-        .duration(750)
-        .ease(d3.easeLinear);
-    
-      y.domain([0, d3.max(data,d => 
-        d3.max(d.values,e => e.value)
-      )]);
-    
-      chart.select(".yaxis")
-        .transition(t)
-        .call(yAxis);
-      
-      let line = d3.line()
-        .x(d => x(d.start_date))
-        .y(d => y(d.value))
-        .defined(d => d.value != null)
-      
-      let typegroups = chart.selectAll(".typegroup")
-        .data(data)
-       
-      typegroups = typegroups.enter()
-        .append("g")
-        .attr("class","typegroup")
-        .attr("fill", "none")
-        .attr("stroke-width", 2)
-        .attr("stroke-linejoin", "round")
-        .attr("stroke-linecap", "round")
-        .style("stroke", d => z(d.key))
-        .merge(typegroups)
-      
-      let lines = typegroups.selectAll(".line")
-        .data(d => [d.values])
-      
-      lines.exit().remove()
-      
-      lines.enter()
-        .append("path")
-        .attr("class","line")
-        .merge(lines).transition(t).attr("d", line)
-      
-      let circles = typegroups.selectAll("circle")
-          .data(d => d.values)
-        
-      circles.exit().remove()
-    
-      circles.enter()
-         .append("circle")
-         .attr("fill", d => z(d.type))
-         .attr("r", 3)     
-         .merge(circles)
-         .transition(t)
-         .attr("cx", d => x(d.start_date))
-         .attr("cy", d => y(d.value))
-    
-      let legendSpace = width/data.length;
-    
-        // Add the Legend
-      chart.selectAll(".legend")
-          .data(data)
-          .enter()
-          .append("text")
-          .attr("x", (d,i) => (legendSpace/2)+i*legendSpace)  // space legend
-          .attr("y", height + (margin.bottom/2)+ 5)
-          .attr("class", "legend")    // style the legend
-          .style("fill", d => z(d.key))
-          .text(d => d.key);   
-    }
-}
-
 let updateChart1 = prepareChart(".chart", 960,500);
 let updateChart2 = prepareChart(".diff", 960,250);
 
@@ -121,6 +14,20 @@ let updateChart = function() {
 d3.select("#cumulative").on("change", updateChart);
 
 d3.json("/totals/")
+  .then(trends => {               
+    let outputArr = []
+    if(trends.income != null) {
+        let incomes = cumulativeAmounts(trends.income.periods,a => a, "income")
+        outputArr.push(...incomes.a)
+        outputArr.push(...incomes.f)
+    }
+    if(trends.expense != null) {
+        let expenses = cumulativeAmounts(trends.expense.periods,(a) => -a, "expense")
+        outputArr.push(...expenses.a)
+        outputArr.push(...expenses.f)
+    }
+    return outputArr
+  })   
   .then(function(allData) {
    
   let parseDate = (d) => d3.timeMonth.offset(d3.timeParse('%Y-%m-%d')(d),1)
@@ -142,3 +49,60 @@ d3.json("/totals/")
   updateChart()
 });
 
+
+
+
+const cumulativeAmounts = (arr, convert, prefix ) => {
+  return arr.reduce((d,item) => {
+      if (item.start_date < aDate(0) ) {
+          d.a.push({
+              start_date : item.start_date, 
+              type: d.a[d.a.length-1].type, 
+              value: d.a[d.a.length-1].value + convert(item.actual_amount + item.refund_amount),
+              delta: convert(item.actual_amount + item.refund_amount)
+          })
+      }
+      d.f.push({
+          start_date : item.start_date, 
+          type: d.f[d.f.length-1].type, 
+          value: d.f[d.f.length-1].value + convert(item.forecast_amount),
+          delta: convert(item.forecast_amount)
+      })
+      if (item.start_date < aDate(-1) && item.end_date > aDate(-1)){
+          d.f.push({
+              start_date : item.start_date, 
+              type: d.f[d.f.length-1].type, 
+              value: null,
+              delta: null
+          })
+          d.f.push({
+              start_date : item.start_date, 
+              type: d.f[d.f.length-1].type, 
+              value: d.a[d.a.length-1].value,
+              delta: null
+          })
+      }
+      return d
+  },
+      {a: [{start_date: '2017-12-01', type: prefix + "_actual", value:0, delta:0}],
+      f: [{start_date: '2017-12-01', type: prefix + "_forecast", value:0, delta:0}]}
+  )
+}
+
+
+const aDate = (x) => {
+  var todayDate = new Date();
+  var dd = todayDate.getDate();
+  var mm = todayDate.getMonth() + 1 + x; //January is 0!
+  var yyyy = todayDate.getFullYear();
+
+  if(dd<10) {
+      dd = '0'+dd
+  } 
+
+  if(mm<10) {
+      mm = '0'+mm
+  } 
+
+  return yyyy + '-' + mm + '-' + dd;
+}
