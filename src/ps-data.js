@@ -5,6 +5,14 @@ const path  = require('path');
 
 const apipath = 'https://api.pocketsmith.com/v2'
 
+const periodbase = ['01','02','03','04','05','06','07','08','09','10','11','12'] 
+.map( item => ({ 
+        start_date: '2018-' + item + '-01', 
+        actual_amount : 0, 
+        refund_amount : 0, 
+        forecast_amount : 0 
+    })) 
+
 const psfetch = url => 
     fetch(url, {
         headers: {'Authorization':'Key ' + process.env.PSKEY}
@@ -43,11 +51,29 @@ const fetchTrends = (id, catlist, scenlist) => {
     };
     trendUrl.search = new URLSearchParams(newLocal);
     
-    return psfetch(trendUrl.toString());
-    
+    return psfetch(trendUrl.toString())
+    .then(totals => {
+        let incomePeriods = (totals.income.periods || periodbase)
+        let expensePeriods = (totals.expense.periods || periodbase)
+        return incomePeriods.reduce(
+            (a,b,i) => {
+                a.push({start_date: b.start_date,
+                    income_actual : b.actual_amount + b.refund_amount,
+                    income_forecast : b.forecast_amount,
+                    expense_actual : -1*(expensePeriods[i].actual_amount + expensePeriods[i].refund_amount),
+                    expense_forecast: -1*(expensePeriods[i].forecast_amount) })
+                return a
+            }
+            , [{
+                start_date : '2017-12-01',
+                income_actual : 0,
+                income_forecast : 0,
+                expense_actual : 0,
+                expense_forecast: 0 
+            }]
+        )
+    });
 };
-
-
 
 const fetchScenarios = (id) => {
     let allAccounts = psfetch(apipath + '/users/' + id +'/accounts' )
@@ -81,28 +107,7 @@ const totalsOnly = () =>{
             acc + (acc === '' ? '' : ',') + val.id,'')    
         return fetchTrends(id, cats, scenlist)
     })
-    // .then(totals => totals.reduce(
-    //     (a,b,i) => {
-    //         a.push(sumTrend(a[i], b,b.start_date))
-    //         return a
-    //     }
-    // , [{
-    //     start_date : '2017-12-01',
-    //     income_actual : 0,
-    //     income_forecast : 0,
-    //     expense_actual : 0,
-    //     expense_forecast: 0 
-    //     }]
-    // ));
 }
-
-const sumTrend = (t1,t2, start_date) => ({
-    start_date : start_date,
-    income_actual : t1.income_actual + t2.income_actual,
-    income_forecast : t1.income_forecast + t2.income_forecast,
-    expense_actual : t1.expense_actual + (t2.expense_actual === 0 ? null : t2.expense_actual),
-    expense_forecast :t1.expense_forecast + t2.expense_forecast,
-})
 
 const allCategories = () => {
     let userid = fetchID();

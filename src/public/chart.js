@@ -9,7 +9,7 @@ function prepareChart(selector, inWidth, inHeight) {
     let z = d3.scaleOrdinal(d3.schemeDark2)
       
     var xAxis = d3.axisBottom(x);    
-    var yAxis = d3.axisLeft(y).ticks(15,"$");
+    var yAxis = d3.axisLeft(y).ticks(10,"s");
   
     var chart = d3.select(selector)
       .append("svg")
@@ -38,9 +38,9 @@ function prepareChart(selector, inWidth, inHeight) {
           .duration(750)
           .ease(d3.easeLinear);
       
-        y.domain([0, d3.max(data,d => 
-          d3.max(d.values,e => e.value)
-        )]);
+        y.domain([d3.min(data,d => d3.min(d.values,e => e.value)), 
+          d3.max(data,d => d3.max(d.values,e => e.value))
+        ]);
       
         chart.select(".yaxis")
           .transition(t)
@@ -49,7 +49,7 @@ function prepareChart(selector, inWidth, inHeight) {
         let line = d3.line()
           .x(d => x(d.start_date))
           .y(d => y(d.value))
-          .defined(d => d.value != null)
+          .defined(d => d.value !== null)
         
         let typegroups = chart.selectAll(".typegroup")
           .data(data)
@@ -75,7 +75,7 @@ function prepareChart(selector, inWidth, inHeight) {
           .merge(lines).transition(t).attr("d", line)
         
         let circles = typegroups.selectAll("circle")
-            .data(d => d.values)
+            .data(d => d.values.filter(e => e.value != null))
           
         circles.exit().remove()
       
