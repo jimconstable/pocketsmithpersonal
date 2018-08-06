@@ -79,14 +79,19 @@ function prepareChart(selector, inWidth, inHeight) {
           
         circles.exit().remove()
       
-        circles.enter()
+        let allCircles = circles.enter()
            .append("circle")
            .attr("fill", d => z(d.type))
-           .attr("r", 3)     
-           .merge(circles)
+           .attr("r", 3)
+           .merge(circles);
+        
+        allCircles
            .transition(t)
            .attr("cx", d => x(d.start_date))
-           .attr("cy", d => y(d.value))
+           .attr("cy", d => y(d.value));
+        
+           allCircles.append("svg:title")
+           .text(d => Math.round(d.value));
       
         let legendSpace = width/data.length;
       
