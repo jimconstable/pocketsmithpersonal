@@ -19,6 +19,15 @@ app.use('/data', (req, res) =>
     });    
 });
 
+app.use('/listcats', (req, res) => 
+{
+    fetchData.listCategories()
+    .then(output => {
+       res.send( output );
+    });    
+});
+
+
 app.use('/totals', (req, res) => 
 {
     fetchData.totalsOnly()

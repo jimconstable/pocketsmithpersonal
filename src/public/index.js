@@ -61,9 +61,8 @@ d3.json("/totals/")
           value: _.findLast(output.diffAccum,e => e.type == "actual").value
         })        
       }
-
-
     })
+    
     console.log(output)
       
     return output

@@ -23,10 +23,17 @@ const fetchID = () =>
     psfetch(apipath + '/me')
     .then(data => data.id);
 
-const fetchCategories = (id) => 
-    psfetch(apipath + '/users/' + id +'/categories'  )
-    .then(cats => cats.filter(item => item.title != 'Transfers'))
-    .then(filteredcats => filteredcats.reduce(catConCat,[]));
+const fetchCategories = (id) => {
+    let allCats =  psfetch(apipath + '/users/' + id +'/categories'  )
+        .then(cats => cats.reduce(catConCat,[]));
+    let ignoreCats = fs.readJson(path.join(__dirname, '..', 'categories.json'));
+    
+    return Promise.all([allCats, ignoreCats])
+        .then(([allcat, ignorecat])=>
+           allcat.filter(item => !ignorecat.includes(item.title))
+        )
+    
+}
 
 const catConCat = (acc, val) => {
     let childs = val.children.reduce(catConCat, []);
@@ -130,5 +137,16 @@ const allCategories = () => {
     );
 }
 
+const listCategories = () => {
+    let userid = fetchID();
 
-module.exports = { allCategories, totalsOnly };
+    // let scenarios = userid
+    // .then(id => fetchScenarios(id));
+
+    let categories = userid
+    .then(id => fetchCategories(id));
+    
+    return categories;
+}
+
+module.exports = { allCategories, totalsOnly, listCategories };
