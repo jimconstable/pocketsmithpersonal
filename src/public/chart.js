@@ -90,7 +90,10 @@ function prepareChart(selector, inWidth, inHeight) {
            .attr("cx", d => x(d.start_date))
            .attr("cy", d => y(d.value));
         
-           allCircles.append("svg:title")
+        allCircles.selectAll("title")
+            .remove();
+        
+        allCircles.append("svg:title")
            .text(d => Math.round(d.value));
       
         let legendSpace = width/data.length;

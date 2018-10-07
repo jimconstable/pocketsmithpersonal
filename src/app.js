@@ -36,5 +36,10 @@ app.use('/totals', (req, res) =>
     });    
 });
 
+app.use('/test', (req, res) => 
+{
+    fetchData.test().then(output => res.json(output)) ;
+});
+
 app.listen(4000);
 console.log('listening...');
