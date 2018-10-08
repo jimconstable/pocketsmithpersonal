@@ -88,14 +88,14 @@ const fetchBudgetTrends = (id, parameters) => {
   );
 };
 
-const fetchActualTrends = (id, cats, accs,  parameters) => {
+const fetchActualTrends = (id, cats, accs, parameters) => {
   let baseData = periods(
     parameters.start_date,
     parameters.end_date,
     parameters.period,
     parameters.interval
-  );  
-console.log(cats,accs)
+  );
+  console.log(cats, accs);
   return Promise.all(
     baseData.map((val, i) => {
       if (i == 0) return val;
@@ -105,40 +105,36 @@ console.log(cats,accs)
 };
 
 function MonthTransPage(id, cats, accs, val, page = 1) {
-    let trendUrl = new URL(apipath + "/users/" + id + "/transactions");
-    trendUrl.search = new URLSearchParams({
-        start_date: val.start_date,
-        end_date: val.end_date,
-        page : page 
-    });
+  let trendUrl = new URL(apipath + "/users/" + id + "/transactions");
+  trendUrl.search = new URLSearchParams({
+    start_date: val.start_date,
+    end_date: val.end_date,
+    page: page
+  });
 
-    return psfetch(trendUrl.toString())
-    .then(trans => {
-        console.log(val.start_date, ":", trans.length);
-        let valladd =  trans.reduce((total, next) => {
-            if ((next.category === null || cats.includes(next.category.title))
-            && (accs.includes(next.transaction_account.name)))
-            {
-                if (next.amount > 0) {
-                    total.income_actual = (total.income_actual || 0) + next.amount;
-                }
-                else {
-                    total.expense_actual = (total.expense_actual || 0) - next.amount;
-                }
-            }
-            return total;
-        }, val)
-        
-        if(trans.length == 30 ){
-            return MonthTransPage(id, cats, accs, valladd,page+1)
+  return psfetch(trendUrl.toString()).then(trans => {
+    console.log(val.start_date, ":", trans.length);
+    let valladd = trans.reduce((total, next) => {
+      if (
+        (next.category === null || cats.includes(next.category.title)) &&
+        accs.includes(next.transaction_account.name)
+      ) {
+        if (next.amount > 0) {
+          total.income_actual = (total.income_actual || 0) + next.amount;
+        } else {
+          total.expense_actual = (total.expense_actual || 0) - next.amount;
         }
-        else{
-            return valladd;
-        }
-    });
+      }
+      return total;
+    }, val);
+
+    if (trans.length == 30) {
+      return MonthTransPage(id, cats, accs, valladd, page + 1);
+    } else {
+      return valladd;
+    }
+  });
 }
-
-
 
 const test = () => {
   let start_date = "2018-01-01";
@@ -148,18 +144,19 @@ const test = () => {
 
   let userid = fetchID();
   let accounts = fetchAccounts();
-  let categories = userid
-    .then(id => fetchCategories(id));  
+  let categories = userid.then(id => fetchCategories(id));
 
-  return Promise.all([userid,categories,accounts])
-    .then(([id, cats, accs]) =>
-      fetchActualTrends(id, cats.map(x => x.title), accs, { start_date, end_date, period, interval })
-    );
-   
+  return Promise.all([userid, categories, accounts]).then(([id, cats, accs]) =>
+    fetchActualTrends(id, cats.map(x => x.title), accs, {
+      start_date,
+      end_date,
+      period,
+      interval
+    })
+  );
+
   // let scenarios =
   //     userid.then(id => fetchScenarios(id));
-
-  
 
   // //let forecasts =
   // return Promise.all([userid, categories, scenarios])
@@ -182,7 +179,6 @@ const test = () => {
 
   //     return fetchBudgetTrends(id, params)
   // });
-
 
   // return Promise.all([userid, categories, accounts, forecasts])
   //     .then(([id, catlist, acclist, fore]) =>{
@@ -322,4 +318,3 @@ const listCategories = () => {
 };
 
 module.exports = { test, allCategories, totalsOnly, listCategories };
-
