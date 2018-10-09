@@ -27,7 +27,7 @@ d3.json("/totals/")
       let start_date = parseDate(m.start_date);
 
       Object.keys(m).forEach(k => {
-        if (k != "start_date") {
+        if (k != "start_date" && k != "end_date") {
           if (
             start_date < d3.timeMonth.offset(new Date(), 1) ||
             k.includes("forecast")
