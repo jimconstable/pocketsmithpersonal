@@ -32,7 +32,7 @@ function prepareChart(selector, inWidth, inHeight) {
     .attr("class", "yaxis")
     .call(yAxis);
 
-  let months = d3.utcMonth.range(new Date(2017, 12, 1), new Date(2019, 1, 1));
+  let months = d3.utcMonth.range(new Date(2018, 12, 1), new Date(2020, 1, 1));
   x.domain(d3.extent(months));
 
   chart

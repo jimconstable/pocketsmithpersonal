@@ -149,8 +149,8 @@ function MonthTransPage(id, cats, accs, val, page = 1) {
 }
 
 const totalsOnly = () => {
-  let start_date = "2018-01-01";
-  let end_date = "2018-12-31";
+  let start_date = "2019-01-01";
+  let end_date = "2019-12-31";
   let period = "months";
   let interval = 1;
 
